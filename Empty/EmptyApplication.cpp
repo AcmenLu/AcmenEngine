@@ -2,6 +2,6 @@
 
 namespace Acmen
 {
-    BaseApplication g_App;
-    IApplication* g_App = &g_App;
+	BaseApplication g_App;
+	IApplication* g_pApp = &g_App;
 }

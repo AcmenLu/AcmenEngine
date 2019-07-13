@@ -5,22 +5,22 @@ using namespace Acmen;
 
 namespace Acmen
 {
-    extern IApplication* g_App;
+	extern IApplication* g_pApp;
 }
 
 int main(int argc, char** argv)
 {
-    int ret;
-    if(ret = g_App->Initialize() != 0)
-    {
-        printf("App Initialize failed, willExit now.");
-        return ret;
-    }
+	int ret;
+	if(ret = g_pApp->Initialize() != 0)
+	{
+		printf("App Initialize failed, willExit now.");
+		return ret;
+	}
 
-    while (!g_App->IsQuit())
-    {
-        g_App->Tick();
-    }
-    g_App->Finalize();
-    return 0;
+	while (!g_pApp->IsQuit())
+	{
+		g_pApp->Tick();
+	}
+	g_pApp->Finalize();
+	return 0;
 }

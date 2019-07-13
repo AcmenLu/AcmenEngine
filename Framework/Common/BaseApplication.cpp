@@ -2,13 +2,13 @@
 
 int Acmen::BaseApplication::Initialize()
 {
-    m_bQuit = false;
-    return 0;
+	m_bQuit = false;
+	return 0;
 }
 
 void Acmen::BaseApplication::Finalize()
 {
-    
+	
 }
 
 void Acmen::BaseApplication::Tick()
@@ -18,5 +18,5 @@ void Acmen::BaseApplication::Tick()
 
 bool Acmen::BaseApplication::IsQuit()
 {
-    return m_bQuit;
+	return m_bQuit;
 }
