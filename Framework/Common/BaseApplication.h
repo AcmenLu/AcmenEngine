@@ -15,4 +15,4 @@ namespace Acmen
 	protected:
 		bool m_bQuit;
 	};
-} // namespace Acmen
+}
