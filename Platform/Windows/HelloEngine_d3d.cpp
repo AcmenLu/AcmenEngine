@@ -45,7 +45,7 @@ inline void SafeRelease(T **ppInterfaceToRelease)
 void CreateRenderTarget()
 {
 	ID3D11Texture2D *pBackBuffer;
-	g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPCOID*)&pBackBuffer);
+	g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 	g_pDev->CreateRenderTargetView(pBackBuffer, NULL, &g_pRTView);
 	pBackBuffer->Release();
 	g_pDevcon->OMSetRenderTargets(1, &g_pRTView, NULL);
@@ -149,6 +149,7 @@ HRESULT CreateGraphicsResources(HWND hWnd)
 		if(hr == S_OK)
 		{
 			CreateRenderTarget();
+			SetViewPort();
 			InitPipeLine();
 			InitGraphics();
 		}
@@ -170,7 +171,7 @@ void DiscardGraphicsResources()
 
 void RenderFrame()
 {
-	const FLOAT clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	const FLOAT clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	g_pDevcon->ClearRenderTargetView(g_pRTView, clearColor);
 	// do 3D rendering on the back buffer here
 	UINT stride = sizeof(VERTEX);
@@ -239,6 +240,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		case WM_PAINT:
 		{
 			result = CreateGraphicsResources(hWnd);
+			RenderFrame();
             wasHandled = true;
         	break;
 		}
