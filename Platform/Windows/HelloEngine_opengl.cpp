@@ -131,7 +131,7 @@ const bool VSYNC_ENABLE = true;
 const float SCREEN_DEPTH = 1000.0f;
 const float SCREEN_NEAR = 0.1f;
 
-int gvertexCount, g_indexCount;
+int g_vertexCount, g_indexCount;
 unsigned int g_vertexArrayID, g_vertexBufferId, g_indexBufferId;
 
 unsigned int g_vertexShader;
@@ -225,7 +225,7 @@ bool InitializeOpenGL(HWND hWnd, int screenWidth, int screenHeight, float screen
 	attributeList[4] = 0;
 
 	g_renderingContext = wglCreateContextAttribsARB(g_deviceContext, 0, attributeList);
-	if(g_renderingCOntext == NULL)
+	if(g_renderingContext == NULL)
 	{
 		return false;
 	}
@@ -236,12 +236,12 @@ bool InitializeOpenGL(HWND hWnd, int screenWidth, int screenHeight, float screen
 	}
 
 	glClearDepth(1.0f);
-	glEnable(GL_DEPT_TEST);
+	glEnable(GL_DEPTH_TEST);
 	glFrontFace(GL_CW);
 	glEnable(GL_CULL_FACE);
-	glCULLFACE(GL_BACK);
+	glCullFace(GL_BACK);
 
-	BuildIdentityMatrix(g_worlfMatrix);
+	BuildIdentityMatrix(g_worldMatrix);
 	fieldOfView = PI / 4.0f;
 	screenAspect = (float)screenWidth / (float)screenHeight;
 	BuildPerspectiveFovLHMatrix(g_projectionMatrix, fieldOfView, screenAspect, screenNear, screenDepth);
@@ -513,6 +513,461 @@ void GetVideoCardInfo(char* cardName)
 	return;
 }
 
+bool InitializeExtensions(HWND hwnd)
+{
+	HDC deviceContex;
+	PIXELFORMATDESCRIPTOR pixelFormat;
+	int error;
+	HGLRC renderContex;
+	bool result;
+	deviceContex = GetDC(hwnd);
+	if(!deviceContex)
+	{
+		return false;
+	}
+
+	error = SetPixelFormat(deviceContex, 1, &pixelFormat);
+	if(error != 1)
+	{
+		return false;
+	}
+
+	renderContex = wglCreateContext(deviceContex);
+	if(!renderContex)
+	{
+		return false;
+	}
+	error = wglMakeCurrent(deviceContex, renderContex);
+	if(error != 1)
+	{
+		return false;
+	}
+	result = LoadExtensionList();
+	if(!result)
+	{
+		return false;
+	}
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(renderContex);
+	renderContex = NULL;
+	ReleaseDC(hwnd, deviceContex);
+	deviceContex = 0;
+	return true;
+}
+
+void OutputShaderErrorMessage(HWND hwnd, unsigned int shaderId, const char* shaderFilename)
+{
+	int logSize, i;
+	char* infoLog;
+	ofstream fout;
+	wchar_t newString[128];
+	unsigned int error;
+	size_t convertedChars;
+
+
+	// Get the size of the string containing the information log for the failed shader compilation message.
+	glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &logSize);
+
+	// Increment the size by one to handle also the null terminator.
+	logSize++;
+
+	// Create a char buffer to hold the info log.
+	infoLog = new char[logSize];
+	if(!infoLog)
+	{
+		return;
+	}
+
+	// Now retrieve the info log.
+	glGetShaderInfoLog(shaderId, logSize, NULL, infoLog);
+
+	// Open a file to write the error message to.
+	fout.open("shader-error.txt");
+
+	// Write out the error message.
+	for(i=0; i<logSize; i++)
+	{
+		fout << infoLog[i];
+	}
+
+	// Close the file.
+	fout.close();
+
+	// Convert the shader filename to a wide character string.
+	error = mbstowcs_s(&convertedChars, newString, 128, shaderFilename, 128);
+	if(error != 0)
+	{
+		return;
+	}
+
+	// Pop a message up on the screen to notify the user to check the text file for compile errors.
+	MessageBoxW(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", newString, MB_OK);
+
+	return;
+}
+
+void OutputLinkerErrorMessage(HWND hwnd, unsigned int programId)
+{
+	int logSize, i;
+	char* infoLog;
+	ofstream fout;
+	// Get the size of the string containing the information log for the failed shader compilation message.
+	glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &logSize);
+	// Increment the size by one to handle also the null terminator.
+	logSize++;
+	// Create a char buffer to hold the info log.
+	infoLog = new char[logSize];
+	if(!infoLog)
+	{
+		return;
+	}
+	// Now retrieve the info log.
+	glGetProgramInfoLog(programId, logSize, NULL, infoLog);
+	// Open a file to write the error message to.
+	fout.open("linker-error.txt");
+	// Write out the error message.
+	for(i=0; i<logSize; i++)
+	{
+		fout << infoLog[i];
+	}
+	// Close the file.
+	fout.close();
+	// Pop a message up on the screen to notify the user to check the text file for linker errors.
+	MessageBox(hwnd, _T("Error compiling linker.  Check linker-error.txt for message."), _T("Linker Error"), MB_OK);
+}
+
+char* LoadShaderSourceFile(const char* filename)
+{
+	ifstream fin;
+	int fileSize;
+	char input;
+	char* buffer;
+	// Open the shader source file.
+	fin.open(filename);
+	// If it could not open the file then exit.
+	if(fin.fail())
+	{
+		return 0;
+	}
+	// Initialize the size of the file.
+	fileSize = 0;
+	// Read the first element of the file.
+	fin.get(input);
+	// Count the number of elements in the text file.
+	while(!fin.eof())
+	{
+		fileSize++;
+		fin.get(input);
+	}
+	// Close the file for now.
+	fin.close();
+	// Initialize the buffer to read the shader source file into.
+	buffer = new char[fileSize+1];
+	if(!buffer)
+	{
+		return 0;
+	}
+	// Open the shader source file again.
+	fin.open(filename);
+	// Read the shader text file into the buffer as a block.
+	fin.read(buffer, fileSize);
+	// Close the file.
+	fin.close();
+	// Null terminate the buffer.
+	buffer[fileSize] = '\0';
+	return buffer;
+}
+
+bool InitializeShader(HWND hwnd, const char* vsFilename, const char* fsFilename)
+{
+	const char* vertexShaderBuffer;
+	const char* fragmentShaderBuffer;
+	int status;
+
+	// Load the vertex shader source file into a text buffer.
+	vertexShaderBuffer = LoadShaderSourceFile(vsFilename);
+	if(!vertexShaderBuffer)
+	{
+		return false;
+	}
+
+	// Load the fragment shader source file into a text buffer.
+	fragmentShaderBuffer = LoadShaderSourceFile(fsFilename);
+	if(!fragmentShaderBuffer)
+	{
+		return false;
+	}
+
+	// Create a vertex and fragment shader object.
+	g_vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	g_fragmenShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+	// Copy the shader source code strings into the vertex and fragment shader objects.
+	glShaderSource(g_vertexShader, 1, &vertexShaderBuffer, NULL);
+	glShaderSource(g_fragmenShader, 1, &fragmentShaderBuffer, NULL);
+
+	// Release the vertex and fragment shader buffers.
+	delete [] vertexShaderBuffer;
+	vertexShaderBuffer = 0;
+
+	delete [] fragmentShaderBuffer;
+	fragmentShaderBuffer = 0;
+
+	// Compile the shaders.
+	glCompileShader(g_vertexShader);
+	glCompileShader(g_fragmenShader);
+
+	// Check to see if the vertex shader compiled successfully.
+	glGetShaderiv(g_vertexShader, GL_COMPILE_STATUS, &status);
+	if(status != 1)
+	{
+		// If it did not compile then write the syntax error message out to a text file for review.
+		OutputShaderErrorMessage(hwnd, g_vertexShader, vsFilename);
+		return false;
+	}
+
+	// Check to see if the fragment shader compiled successfully.
+	glGetShaderiv(g_fragmenShader, GL_COMPILE_STATUS, &status);
+	if(status != 1)
+	{
+		// If it did not compile then write the syntax error message out to a text file for review.
+		OutputShaderErrorMessage(hwnd, g_fragmenShader, fsFilename);
+		return false;
+	}
+
+	// Create a shader program object.
+	g_shaderProgram = glCreateProgram();
+
+	// Attach the vertex and fragment shader to the program object.
+	glAttachShader(g_shaderProgram, g_vertexShader);
+	glAttachShader(g_shaderProgram, g_fragmenShader);
+
+	// Bind the shader input variables.
+	glBindAttribLocation(g_shaderProgram, 0, "inputPosition");
+	glBindAttribLocation(g_shaderProgram, 1, "inputColor");
+
+	// Link the shader program.
+	glLinkProgram(g_shaderProgram);
+
+	// Check the status of the link.
+	glGetProgramiv(g_shaderProgram, GL_LINK_STATUS, &status);
+	if(status != 1)
+	{
+		// If it did not link then write the syntax error message out to a text file for review.
+		OutputLinkerErrorMessage(hwnd, g_shaderProgram);
+		return false;
+	}
+
+	return true;
+}
+
+void ShutdownShader()
+{
+	// Detach the vertex and fragment shaders from the program.
+	glDetachShader(g_shaderProgram, g_vertexShader);
+	glDetachShader(g_shaderProgram, g_fragmenShader);
+
+	// Delete the vertex and fragment shaders.
+	glDeleteShader(g_vertexShader);
+	glDeleteShader(g_fragmenShader);
+
+	// Delete the shader program.
+	glDeleteProgram(g_shaderProgram);
+}
+
+bool SetShaderParameters(float* worldMatrix, float* viewMatrix, float* projectionMatrix)
+{
+	unsigned int location;
+	// Set the world matrix in the vertex shader.
+	location = glGetUniformLocation(g_shaderProgram, "worldMatrix");
+	if(location == -1)
+	{
+		return false;
+	}
+	glUniformMatrix4fv(location, 1, false, worldMatrix);
+
+	// Set the view matrix in the vertex shader.
+	location = glGetUniformLocation(g_shaderProgram, "viewMatrix");
+	if(location == -1)
+	{
+		return false;
+	}
+	glUniformMatrix4fv(location, 1, false, viewMatrix);
+
+	// Set the projection matrix in the vertex shader.
+	location = glGetUniformLocation(g_shaderProgram, "projectionMatrix");
+	if(location == -1)
+	{
+		return false;
+	}
+	glUniformMatrix4fv(location, 1, false, projectionMatrix);
+
+	return true;
+}
+
+bool InitializeBuffers()
+{
+	VertexType vertices[] = {
+		{{  1.0f,  1.0f,  1.0f }, { 1.0f, 0.0f, 0.0f }},
+		{{  1.0f,  1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }},
+		{{ -1.0f,  1.0f, -1.0f }, { 0.0f, 0.0f, 1.0f }},
+		{{ -1.0f,  1.0f,  1.0f }, { 1.0f, 1.0f, 0.0f }},
+		{{  1.0f, -1.0f,  1.0f }, { 1.0f, 0.0f, 1.0f }},
+		{{  1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f }},
+		{{ -1.0f, -1.0f, -1.0f }, { 0.5f, 1.0f, 0.5f }},
+		{{ -1.0f, -1.0f,  1.0f }, { 1.0f, 0.5f, 1.0f }},
+	};
+	uint16_t indices[] = { 1, 2, 3, 3, 2, 6, 6, 7, 3, 3, 0, 1, 0, 3, 7, 7, 6, 4, 4, 6, 5, 0, 7, 4, 1, 0, 4, 1, 4, 5, 2, 1, 5, 2, 5, 6 };
+
+	// Set the number of vertices in the vertex array.
+	g_vertexCount = sizeof(vertices) / sizeof(VertexType);
+
+	// Set the number of indices in the index array.
+	g_indexCount = sizeof(indices) / sizeof(uint16_t);
+
+	// Allocate an OpenGL vertex array object.
+	glGenVertexArrays(1, &g_vertexArrayID);
+
+	// Bind the vertex array object to store all the buffers and vertex attributes we create here.
+	glBindVertexArray(g_vertexArrayID);
+
+	// Generate an ID for the vertex buffer.
+	glGenBuffers(1, &g_vertexBufferId);
+
+	// Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+	glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
+	glBufferData(GL_ARRAY_BUFFER, g_vertexCount * sizeof(VertexType), vertices, GL_STATIC_DRAW);
+
+	// Enable the two vertex array attributes.
+	glEnableVertexAttribArray(0);  // Vertex position.
+	glEnableVertexAttribArray(1);  // Vertex color.
+
+	// Specify the location and format of the position portion of the vertex buffer.
+	glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VertexType), 0);
+
+	// Specify the location and format of the color portion of the vertex buffer.
+	glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
+	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(VertexType), (char*)NULL + (3 * sizeof(float)));
+
+	// Generate an ID for the index buffer.
+	glGenBuffers(1, &g_indexBufferId);
+
+	// Bind the index buffer and load the index data into it.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_indexBufferId);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, g_indexCount* sizeof(uint16_t), indices, GL_STATIC_DRAW);
+
+	return true;
+}
+
+void ShutdownBuffers()
+{
+	// Disable the two vertex array attributes.
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+	// Release the vertex buffer.
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &g_vertexBufferId);
+
+	// Release the index buffer.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &g_indexBufferId);
+
+	// Release the vertex array object.
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &g_vertexArrayID);
+
+	return;
+}
+
+void RenderBuffers()
+{
+	// Bind the vertex array object that stored all the information about the vertex and index buffers.
+	glBindVertexArray(g_vertexArrayID);
+
+	// Render the vertex buffer using the index buffer.
+	glDrawElements(GL_TRIANGLES, g_indexCount, GL_UNSIGNED_SHORT, 0);
+
+	return;
+}
+
+void CalculateCameraPosition()
+{
+    VectorType up, position, lookAt;
+    float yaw, pitch, roll;
+    float rotationMatrix[9];
+
+
+    // Setup the vector that points upwards.
+    up.x = 0.0f;
+    up.y = 1.0f;
+    up.z = 0.0f;
+
+    // Setup the position of the camera in the world.
+    position.x = g_positionX;
+    position.y = g_positionY;
+    position.z = g_positionZ;
+
+    // Setup where the camera is looking by default.
+    lookAt.x = 0.0f;
+    lookAt.y = 0.0f;
+    lookAt.z = 1.0f;
+
+    // Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
+    pitch = g_rotationX * 0.0174532925f;
+    yaw   = g_rotationY * 0.0174532925f;
+    roll  = g_rotationZ * 0.0174532925f;
+
+    // Create the rotation matrix from the yaw, pitch, and roll values.
+    MatrixRotationYawPitchRoll(rotationMatrix, yaw, pitch, roll);
+
+    // Transform the lookAt and up vector by the rotation matrix so the view is correctly rotated at the origin.
+    TransformCoord(lookAt, rotationMatrix);
+    TransformCoord(up, rotationMatrix);
+
+    // Translate the rotated camera position to the location of the viewer.
+    lookAt.x = position.x + lookAt.x;
+    lookAt.y = position.y + lookAt.y;
+    lookAt.z = position.z + lookAt.z;
+
+    // Finally create the view matrix from the three updated vectors.
+    BuildViewMatrix(position, lookAt, up, g_viewMatrix);
+}
+
+void Draw()
+{
+    static float rotateAngle = 0.0f;
+
+    // Set the color to clear the screen to.
+    glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+    // Clear the screen and depth buffer.
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Update world matrix to rotate the model
+    rotateAngle += PI / 120;
+    float rotationMatrixY[16];
+    float rotationMatrixZ[16];
+    MatrixRotationY(rotationMatrixY, rotateAngle);
+    MatrixRotationZ(rotationMatrixZ, rotateAngle);
+    MatrixMultiply(g_worldMatrix, rotationMatrixZ, rotationMatrixY);
+
+    // Generate the view matrix based on the camera's position.
+    CalculateCameraPosition();
+
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    glUseProgram(g_shaderProgram);
+    SetShaderParameters(g_worldMatrix, g_viewMatrix, g_projectionMatrix);
+
+    // Render the model using the color shader.
+    RenderBuffers();
+
+    // Present the back buffer to the screen since rendering is complete.
+    SwapBuffers(g_deviceContext);
+}
+
+
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance,
@@ -546,6 +1001,50 @@ int WINAPI WinMain(HINSTANCE hInstance,
 						hInstance,				// application handle
 						NULL);					// used with multiple windows, NULL
 	ShowWindow(hwnd, nCmdShow);
+
+	InitializeExtensions(hwnd);
+
+    DestroyWindow(hwnd);
+    hwnd = NULL;
+
+    // clear out the window class for use
+    ZeroMemory(&wc, sizeof(WNDCLASSEX));
+
+    // fill in the struct with the needed information
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = hInstance;
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wc.lpszClassName = _T("Hello, Engine!");
+
+    // register the window class
+    RegisterClassEx(&wc);
+
+    // create the window and use the result as the handle
+    hwnd = CreateWindowEx(WS_EX_APPWINDOW,
+        _T("Hello, Engine!"),    // name of the window class
+        _T("Hello, Engine!"),   // title of the window
+        WS_OVERLAPPEDWINDOW,    // window style
+        300,    // x-position of the window
+        300,    // y-position of the window
+        960,    // width of the window
+        540,    // height of the window
+        NULL,    // we have no parent window, NULL
+        NULL,    // we aren't using menus, NULL
+        hInstance,    // application handle
+        NULL);    // used with multiple windows, NULL
+
+    InitializeOpenGL(hwnd, 960, 540, SCREEN_DEPTH, SCREEN_NEAR, true);
+
+    // display the window on the screen
+    ShowWindow(hwnd, nCmdShow);
+    SetForegroundWindow(hwnd);
+
+    InitializeShader(hwnd, VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
+    InitializeBuffers();
+
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
@@ -553,6 +1052,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		DispatchMessage(&msg);
 	}
 	
+	ShutdownBuffers();
+    ShutdownShader();
+    FinalizeOpenGL(hwnd);
+
 	return msg.wParam;
 }
 
@@ -560,22 +1063,19 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 {
 	switch(message)
 	{
+		case WM_CREATE:
+        {
+        }
 		case WM_PAINT:
-			{
-				PAINTSTRUCT ps;
-				HDC hdc = BeginPaint(hWnd, &ps);
-				RECT rec = {20, 20, 60, 80 };
-				HBRUSH brush = (HBRUSH)GetStockObject(BLACK_BRUSH);
-				FillRect(hdc, &rec, brush);
-				EndPaint(hWnd, &ps);
-			}
-			break;
+		{
+			Draw();
+			return 0;
+		}
 		case WM_DESTROY:
-			{
-				PostQuitMessage(0);
-				return 0;
-			}
-			break;
+		{
+			PostQuitMessage(0);
+			return 0;
+		}
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
