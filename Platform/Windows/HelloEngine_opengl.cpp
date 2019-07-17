@@ -157,6 +157,7 @@ bool InitializeOpenGL(HWND hWnd, int screenWidth, int screenHeight, float screen
 	int attributeList[5];
 	float fieldOfView, screenAspect;
 	char *vendorString, * rendererString;
+
 	g_deviceContext = GetDC(hWnd);
 	if(!g_deviceContext)
 	{
@@ -241,15 +242,20 @@ bool InitializeOpenGL(HWND hWnd, int screenWidth, int screenHeight, float screen
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
+	// Initialize the world/model matrix to the identity matrix.
 	BuildIdentityMatrix(g_worldMatrix);
+
 	fieldOfView = PI / 4.0f;
 	screenAspect = (float)screenWidth / (float)screenHeight;
 	BuildPerspectiveFovLHMatrix(g_projectionMatrix, fieldOfView, screenAspect, screenNear, screenDepth);
+
 	vendorString = (char*)glGetString(GL_VENDOR);
     rendererString = (char*)glGetString(GL_RENDERER);
+
 	strcpy_s(g_videoCardDescription, vendorString);
 	strcat_s(g_videoCardDescription, " - ");
 	strcat_s(g_videoCardDescription, rendererString);
+
 	if(vsync)
 	{
 		result = wglSwapIntervalEXT(1);
@@ -520,6 +526,7 @@ bool InitializeExtensions(HWND hwnd)
 	int error;
 	HGLRC renderContex;
 	bool result;
+
 	deviceContex = GetDC(hwnd);
 	if(!deviceContex)
 	{
@@ -547,11 +554,14 @@ bool InitializeExtensions(HWND hwnd)
 	{
 		return false;
 	}
+
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(renderContex);
 	renderContex = NULL;
+
 	ReleaseDC(hwnd, deviceContex);
 	deviceContex = 0;
+
 	return true;
 }
 
@@ -979,8 +989,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WindowProc;
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wc.lpfnWndProc = DefWindowProc;
 	wc.hInstance = hInstance;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
@@ -992,15 +1002,15 @@ int WINAPI WinMain(HINSTANCE hInstance,
 						_T("AcmenEngine"),		// name of the window class
 						_T("Hello Engine"),		// title of the window
 						WS_OVERLAPPEDWINDOW,	// window style
-						300,					// x-position of the window
-						300,					// y-position of the window
-						500,					// width of the window
-						400,					// height of the window
+						0,					// x-position of the window
+						0,					// y-position of the window
+						640,					// width of the window
+						480,					// height of the window
 						NULL,					// we have no parent window, NULL
 						NULL,					// we aren't using menus, NULL
 						hInstance,				// application handle
 						NULL);					// used with multiple windows, NULL
-	ShowWindow(hwnd, nCmdShow);
+	ShowWindow(hwnd, SW_HIDE);
 
 	InitializeExtensions(hwnd);
 
