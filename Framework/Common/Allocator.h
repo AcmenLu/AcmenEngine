@@ -12,8 +12,10 @@ namespace Acmen
     struct PageHeader
     {
         PageHeader* pNext;
+        BlockHeader* Blocks(){
+            return reinterpret_cast<BlockHeader*>(this + 1);
+        }
     };
-    
 
     class Allocator
     {
