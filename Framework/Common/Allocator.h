@@ -1,5 +1,4 @@
 #pragma once
-
 #include <cstddef>
 #include <cstdint>
 
@@ -9,6 +8,7 @@ namespace Acmen
     {
         BlockHeader* pNext;
     };
+
     struct PageHeader
     {
         PageHeader* pNext;
@@ -20,7 +20,7 @@ namespace Acmen
     class Allocator
     {
     public:
-        static const uint8_t PATTERN_ALING  = 0xFC;
+        static const uint8_t PATTERN_ALIGN  = 0xFC;
         static const uint8_t PATTERN_ALLOC  = 0xFD;
         static const uint8_t PATTERN_FREE   = 0xFE;
 
@@ -28,15 +28,16 @@ namespace Acmen
         ~Allocator();
 
         void Reset(size_t data_size, size_t page_size, size_t aligment);
+
         void* Allocate();
         void Free(void* p);
         void FreeAll();
 
     private:
     #if defined(_DEBUG)
-        void FillFreeBlock(PageHeader* pPage);
+        void FillFreePage(PageHeader* pPage);
         void FillFreeBlock(BlockHeader* pBlock);
-        void FillAllocateBlock(BlockHeader* pBlock);
+        void FillAllocatedBlock(BlockHeader* pBlock);
     #endif
 
         BlockHeader* NextBlock(BlockHeader* pBlock);
@@ -46,6 +47,7 @@ namespace Acmen
         size_t      m_szPageSize;
         size_t      m_szAlignmentSize;
         size_t      m_szBlockSize;
+
         uint32_t    m_nBlocksPerPage;
         uint32_t    m_nPages;
         uint32_t    m_nBlocks;
