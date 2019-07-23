@@ -6,3 +6,4 @@
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
+#include <string>
