@@ -1,3 +1,6 @@
 
 build/*
 *.obj
+Sample/D3D12Sample/.vs/D3D12Sampler/v15/.suo
+Sample/D3D12Sample/.vs/D3D12Sampler/v15/Browse.VC.db
+Sample/D3D12Sample/.vs/D3D12Sampler/v15/ipch/AutoPCH/95ffaf90101ba4fe/D3DAPP.ipch
