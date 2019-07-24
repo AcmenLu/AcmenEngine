@@ -91,5 +91,21 @@ int D3DApp::Run()
 
 bool D3DApp::Initialize()
 {
-	if(!I)
+	if (!InitMainWindow())
+		return false;
+
+	if (!InitDirect3D())
+		return false;
+	OnResize();
+	return true;
+}
+
+void D3DApp::CreateRtvAndDsvDescriptorHeaps()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+	rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
+	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	rtvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(mD3DDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
 }
