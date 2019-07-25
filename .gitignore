@@ -4,3 +4,8 @@ build/*
 Sample/D3D12Sample/.vs/D3D12Sampler/v15/.suo
 Sample/D3D12Sample/.vs/D3D12Sampler/v15/Browse.VC.db
 Sample/D3D12Sample/.vs/D3D12Sampler/v15/ipch/AutoPCH/95ffaf90101ba4fe/D3DAPP.ipch
+Platform/Windows/HelloEngine_opengl.exe
+Sample/D3D12Sample/.vs/D3D12Sampler/v15/ipch/AutoPCH/410f4edcbc057c86/GAMETIMER.ipch
+Sample/D3D12Sample/.vs/D3D12Sampler/v15/ipch/AutoPCH/704bc8acfe55bb85/D3DAPP.ipch
+Sample/D3D12Sample/.vs/D3D12Sampler/v15/ipch/AutoPCH/aef29e08cce497d0/D3DUTIL.ipch
+Sample/D3D12Sample/.vs/D3D12Sampler/v15/ipch/AutoPCH/d10d7f9121c44b96/D3DAPP.ipch

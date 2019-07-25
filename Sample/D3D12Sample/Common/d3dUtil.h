@@ -23,14 +23,6 @@ public:
 	int LineNumber = -1;
 };
 
-DxException::DxException()
-{
-}
-
-DxException::~DxException()
-{
-}
-
 inline std::wstring AnsiToWString(const std::string& str)
 {
 	WCHAR buffer[512];
