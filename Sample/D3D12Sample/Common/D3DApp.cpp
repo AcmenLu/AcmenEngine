@@ -1,4 +1,6 @@
 #include "D3DApp.h"
+#include <windowsx.h>
+
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -314,4 +316,43 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+bool D3DApp::InitMainWindow()
+{
+	WNDCLASSEX wc;
+	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.style			= CS_HREDRAW | CS_VREDRAW;;
+	wc.lpfnWndProc		= MainWndProc;
+	wc.hInstance		= mhAppInst;
+	wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground	= (HBRUSH)GetStockObject(NULL_BRUSH);
+	
+	wc.lpszMenuName		= 0;
+	wc.lpszClassName	= _T("MainWnd");
+
+	if (!RegisterClassEx(&wc))
+	{
+		MessageBox(0, _T("Register class failed!"), 0, 0);
+		return false;
+	}
+
+	RECT R = { 0, 0, mClientWidth, mClientHeight };
+	AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
+	int width = R.right - R.left;
+	int height = R.bottom - R.top;
+
+	mhMainWnd = CreateWindowEx(0, _T("MainWnd"), _T("AcmenEngine"), WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, 0);
+
+	if (!mhMainWnd)
+	{
+		MessageBox(0, _T("Register windows failed!"), 0, 0);
+		return false;
+	}
+	ShowWindow(mhMainWnd, SW_SHOW);
+	UpdateWindow(mhMainWnd);
+
+	return true;
 }
