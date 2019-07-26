@@ -61,7 +61,7 @@ protected:
 
 	HINSTANCE	mhAppInst = nullptr;
 	HWND		mhMainWnd = nullptr;
-	bool		mAppPause = false;
+	bool		mAppPaused = false;
 	bool		mMinimized = false;
 	bool		mMaximized = false;
 	bool		mResizeing = false;
@@ -78,7 +78,7 @@ protected:
 	
 	Microsoft::WRL::ComPtr<ID3D12Fence>			mFence;
 	UINT64										mCurrentFence = 0;
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue>	mCommanfQueue;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue>	mCommandQueue;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>	mDirectCmdListAlloc;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>	mCommandList;
 
@@ -89,7 +89,7 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>	mRtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>	mDsvHeap;
 
-	D3D12_VIEWPORT								mScreenViewPort;
+	D3D12_VIEWPORT								mScreenViewport;
 	D3D12_RECT									mScissorRect;
 	UINT		mRtvDescriptorSize = 0;
 	UINT		mDsvDescriptorSize = 0;
