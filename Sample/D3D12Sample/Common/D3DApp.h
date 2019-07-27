@@ -49,11 +49,11 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
 
-	void CalculateFrameStates();
+	void CalculateFrameStats();
 
 	void LogAdapters();
-	void LogAdapterOutPuts(IDXGIAdapter* adapter);
-	void LogDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+	void LogAdapterOutputs(IDXGIAdapter* adapter);
+	void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 
 protected:
 	static D3DApp* mApp;
@@ -94,8 +94,8 @@ protected:
 	UINT		mRtvDescriptorSize = 0;
 	UINT		mDsvDescriptorSize = 0;
 	UINT		mCbvSrvUavDescriptorSize = 0;
-
-	std::wstring mMianWndCaption = L"d3d App";
+	
+	std::wstring mMainWndCaption = L"d3d App";
 	D3D_DRIVER_TYPE			md3dDriverType = D3D_DRIVER_TYPE_HARDWARE;
 	DXGI_FORMAT				mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;

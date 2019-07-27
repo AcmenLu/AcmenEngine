@@ -9,7 +9,7 @@
 #include <string>
 
 #include "d3dx12.h"
-#include <tchar.h>
+#include <vector>
 
 
 class DxException
