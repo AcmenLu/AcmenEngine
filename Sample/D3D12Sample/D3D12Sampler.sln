@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.757
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SamplerCommon", "Project\SamplerCommon\SamplerCommon.vcxproj", "{C2160749-616B-4A24-B5C8-5332C11A50CA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InitDirect3D", "Project\InitDirect3D\InitDirect3D.vcxproj", "{C2160749-616B-4A24-B5C8-5332C11A50CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

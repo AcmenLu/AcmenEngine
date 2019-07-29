@@ -137,7 +137,7 @@ void D3DApp::OnResize()
 	ThrowIfFailed(mSwapChain->ResizeBuffers(SwapChainBufferCount, 
 		mClientWidth, mClientWidth, mBackBufferFormat, 
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
-	mCurrbackBuffer = 0;
+	mCurrBackBuffer = 0;
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < SwapChainBufferCount; i++)
@@ -285,7 +285,7 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_GETMINMAXINFO:
 		((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
 		((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
-		return;
+		return 0;
 
 	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
@@ -492,14 +492,14 @@ void D3DApp::FlushCommandQueue()
 
 ID3D12Resource* D3DApp::CurrentBackBuffer() const
 {
-	return mSwapChainBuffer[mCurrbackBuffer].Get();
+	return mSwapChainBuffer[mCurrBackBuffer].Get();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::CurrentBackBufferView() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
 		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
-		mCurrbackBuffer,
+		mCurrBackBuffer,
 		mRtvDescriptorSize);
 }
 
@@ -613,4 +613,4 @@ void D3DApp::LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format)
 
 		::OutputDebugString(text.c_str());
 	}
-}
+} 

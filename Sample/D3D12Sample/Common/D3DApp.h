@@ -14,6 +14,7 @@ class D3DApp
 protected:
     D3DApp(HINSTANCE hInstance);
 	D3DApp(const D3DApp& rhs) = delete;
+	D3DApp& operator=(const D3DApp& rhs) = delete;
 	virtual ~D3DApp();
     
 public:
@@ -82,7 +83,7 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>	mDirectCmdListAlloc;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>	mCommandList;
 
-	int mCurrbackBuffer = 0;
+	int mCurrBackBuffer = 0;
 	Microsoft::WRL::ComPtr<ID3D12Resource>		mSwapChainBuffer[SwapChainBufferCount];
 	Microsoft::WRL::ComPtr<ID3D12Resource>		mDepthStencilBuffer;
 
