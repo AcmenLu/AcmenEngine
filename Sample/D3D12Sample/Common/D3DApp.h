@@ -19,6 +19,9 @@ protected:
     
 public:
 	static D3DApp* GetApp();
+	static int frameCnt;
+	static float timeElapsed;
+
 	HINSTANCE	AppInst() const;
 	HWND		MainWnd() const;
 	float		AspectRation() const;

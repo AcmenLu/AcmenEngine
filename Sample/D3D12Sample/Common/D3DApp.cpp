@@ -12,6 +12,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 D3DApp* D3DApp::mApp = nullptr;
+int D3DApp::frameCnt = 0;
+float D3DApp::timeElapsed = 0.0f;
+
 
 D3DApp* D3DApp::GetApp()
 {
@@ -63,7 +66,8 @@ void D3DApp::Set4xMsaaState(bool value)
 
 int D3DApp::Run()
 {
-	MSG msg = { 0 };
+	MSG msg;
+	GetMessage(&msg, mhMainWnd, 0, 0);
 	mTimer.Reset();
 	while (msg.message != WM_QUIT)
 	{
@@ -75,7 +79,7 @@ int D3DApp::Run()
 		else
 		{
 			mTimer.Tick();
-			if (mAppPaused)
+			if (!mAppPaused)
 			{
 				CalculateFrameStats();
 				Update(mTimer);
@@ -327,9 +331,7 @@ bool D3DApp::InitMainWindow()
 	wc.lpfnWndProc		= MainWndProc;
 	wc.hInstance		= mhAppInst;
 	wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground	= (HBRUSH)GetStockObject(NULL_BRUSH);
-	
-	wc.lpszMenuName		= 0;
+	wc.hbrBackground	= (HBRUSH)COLOR_WINDOW;
 	wc.lpszClassName	= L"MainWnd";
 
 	if (!RegisterClassEx(&wc))
@@ -344,7 +346,7 @@ bool D3DApp::InitMainWindow()
 	int height = R.bottom - R.top;
 
 	mhMainWnd = CreateWindowEx(0, L"MainWnd", mMainWndCaption.c_str(), WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, 0);
+		CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, mhAppInst, 0);
 
 	if (!mhMainWnd)
 	{
@@ -353,7 +355,6 @@ bool D3DApp::InitMainWindow()
 	}
 	ShowWindow(mhMainWnd, SW_SHOW);
 	UpdateWindow(mhMainWnd);
-
 	return true;
 }
 
@@ -388,6 +389,7 @@ bool D3DApp::InitDirect3D()
 			IID_PPV_ARGS(&mD3DDevice)));
 	}
 
+	// Fence: GPU和CPU同步的时候需要
 	ThrowIfFailed(mD3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE,
 		IID_PPV_ARGS(&mFence)));
 
@@ -510,13 +512,6 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView() const
 
 void D3DApp::CalculateFrameStats()
 {
-	// Code computes the average frames per second, and also the 
-	// average time it takes to render one frame.  These stats 
-	// are appended to the window caption bar.
-
-	static int frameCnt = 0;
-	static float timeElapsed = 0.0f;
-
 	frameCnt++;
 
 	// Compute averages over one second period.

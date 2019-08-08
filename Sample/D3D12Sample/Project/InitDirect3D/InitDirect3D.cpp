@@ -8,6 +8,9 @@
 
 #include "../../Common/d3dApp.h"
 #include <DirectXColors.h>
+#include "ProgectController.h"
+
+#ifdef SAMPLE_INITD3D
 
 using namespace DirectX;
 
@@ -95,7 +98,7 @@ void InitDirect3DApp::Draw(const GameTimer& gt)
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
 	// Clear the back buffer and depth buffer.
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	// Specify the buffers we are going to render to.
@@ -121,3 +124,7 @@ void InitDirect3DApp::Draw(const GameTimer& gt)
 	// so we do not have to wait per frame.
 	FlushCommandQueue();
 }
+
+
+
+#endif // SAMPLE_INITD3D
