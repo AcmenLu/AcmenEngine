@@ -6,10 +6,22 @@
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
+#include <DirectXColors.h>
+#include <DirectXCollision.h>
+
 #include <string>
+#include <memory>>
+#include <algorithm>
+#include <vector>
+#include <array>
+#include <unordered_map>
+#include <cstring>>
+#include <fstream>
+#include <sstream>
+#include <cassert>
 
 #include "d3dx12.h"
-#include <vector>
+#include "MathHelper.h"
 
 
 class DxException
@@ -87,8 +99,52 @@ public:
 struct SubmeshGeometry
 {
 	UINT IndexCount = 0;
-	UINT startINdexLocation = 0;
+	UINT StartIndexLocation = 0;
 	INT BaseVertexLocation = 0;
 
 	DirectX::BoundingBox Bounds;
+};
+
+struct MeshGeometry
+{
+	std::string Name;
+	Microsoft::WRL::ComPtr<ID3DBlob> VertexBufferCPU = nullptr;
+	Microsoft::WRL::ComPtr<ID3DBlob> IndexBufferCPU = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> VretexBufferGPU = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
+
+	UINT VertexByteStride = 0;
+	UINT VertexBufferByteSize = 0;
+
+	DXGI_FORMAT IndexFormat = DXGI_FORMAT_R16_UINT;
+	UINT INdexBufferByteSize = 0;
+
+	std::unordered_map<std::string, SubmeshGeometry> DrawArgs;
+
+	D3D12_VERTEX_BUFFER_VIEW VertexBufferView() const
+	{
+		D3D12_VERTEX_BUFFER_VIEW vbv;
+		vbv.BufferLocation = VretexBufferGPU->GetGPUVirtualAddress();
+		vbv.StrideInBytes = VertexByteStride;
+		vbv.SizeInBytes = VertexBufferByteSize;
+		return vbv;
+	}
+
+	D3D12_INDEX_BUFFER_VIEW INdexBufferView() const
+	{
+		D3D12_INDEX_BUFFER_VIEW ibv;
+		ibv.BufferLocation = IndexBufferGPU->GetGPUVirtualAddress();
+		ibv.Format = IndexFormat;
+		ibv.SizeInBytes = INdexBufferByteSize;
+		return ibv;
+	}
+
+	void DisposeUploaders()
+	{
+		VertexBufferUploader = nullptr;
+		IndexBufferUploader = nullptr;
+	}
 };
