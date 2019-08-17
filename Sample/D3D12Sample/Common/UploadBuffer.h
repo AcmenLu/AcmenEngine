@@ -6,10 +6,9 @@ class UploadBuffer
 {
 public:
 	UploadBuffer(ID3D12Device* device, UINT elementCount, bool isConstantBuffer)
+		:miSConatantBuffer(isConstantBuffer)
 	{
-		if (miSConatantBuffer)
-			mElementByteSize = d3dUtil:CalcConstantBufferByteSize(sizeof(T));
-
+		mElementByteSize = sizeof(T);
 		// Constant buffer elements need to be multiples of 256 bytes.
 		// This is because the hardware can only view constant data 
 		// at m*256 byte offsets and of n*256 byte lengths. 
@@ -17,6 +16,8 @@ public:
 		// UINT64 OffsetInBytes; // multiple of 256
 		// UINT   SizeInBytes;   // multiple of 256
 		// } D3D12_CONSTANT_BUFFER_VIEW_DESC;
+		if (isConstantBuffer)
+			mElementByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(T));
 
 		ThrowIfFailed(device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -34,11 +35,10 @@ public:
 	UploadBuffer(const UploadBuffer& rhs) = delete;
 	UploadBuffer& operator=(const UploadBuffer& rhs) = delete;
 
-
 	~UploadBuffer()
 	{
 		if (mUploadBuffer != nullptr)
-			mUploadBuffer->Unmap(nullptr, 0);
+			mUploadBuffer->Unmap(0, nullptr);
 		mMappedData = nullptr;
 	}
 
@@ -49,7 +49,7 @@ public:
 
 	void CopyData(UINT elementIndex, const T& data)
 	{
-		memccpy(&mMappedData[elementIndex * mElementByteSize], &data, sizeof(T));
+		memcpy(&mMappedData[elementIndex * mElementByteSize], &data, sizeof(T));
 	}
 
 private:
