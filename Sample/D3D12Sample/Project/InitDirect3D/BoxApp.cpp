@@ -125,10 +125,9 @@ bool BoxApp::Initialize()
 void BoxApp::OnResize()
 {
 	D3DApp::OnResize();
-	XMMATRIX p = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRation(), 1.0f, 1000.0f);
+	XMMATRIX p = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
 	XMStoreFloat4x4(&mProj, p);
 }
-
 
 void BoxApp::Update(const GameTimer& gt)
 {
@@ -263,6 +262,7 @@ void BoxApp::BuildConstantBuffers()
 	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
 	int boxCBufIndex = 0;
 	cbAddress += boxCBufIndex * objCBByteSize;
+
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 	cbvDesc.BufferLocation = cbAddress;
 	cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));

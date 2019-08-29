@@ -19,12 +19,10 @@ protected:
     
 public:
 	static D3DApp* GetApp();
-	static int frameCnt;
-	static float timeElapsed;
 
 	HINSTANCE	AppInst() const;
 	HWND		MainWnd() const;
-	float		AspectRation() const;
+	float		AspectRatio() const;
 	bool		Get4xMsaaState() const;
 	void		Set4xMsaaState(bool value);
 	int			Run();

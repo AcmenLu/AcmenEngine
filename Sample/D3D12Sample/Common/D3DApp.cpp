@@ -12,9 +12,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 D3DApp* D3DApp::mApp = nullptr;
-int D3DApp::frameCnt = 0;
-float D3DApp::timeElapsed = 0.0f;
-
 
 D3DApp* D3DApp::GetApp()
 {
@@ -44,7 +41,7 @@ HWND D3DApp::MainWnd() const
 	return mhMainWnd;
 }
 
-float D3DApp::AspectRation() const
+float D3DApp::AspectRatio() const
 {
 	return static_cast<float>(mClientWidth) / (mClientHeight);
 }
@@ -151,6 +148,7 @@ void D3DApp::OnResize()
 		rtvHeapHandle.Offset(1, mRtvDescriptorSize);
 	}
 
+	// Create the depth/stencil buffer and view.
 	D3D12_RESOURCE_DESC depthStencilDesc;
 	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Alignment = 0;
@@ -159,6 +157,11 @@ void D3DApp::OnResize()
 	depthStencilDesc.DepthOrArraySize = 1;
 	depthStencilDesc.MipLevels = 1;
 
+	// Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to read from 
+// the depth buffer.  Therefore, because we need to create two views to the same resource:
+//   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
+//   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
+// we need to create the depth buffer resource with a typeless format.  
 	depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	depthStencilDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 	depthStencilDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
@@ -294,17 +297,17 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
-		OnMouseDown(wParam, LOWORD(lParam), HIWORD(lParam));
+		OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
-		OnMouseUp(wParam, LOWORD(lParam), HIWORD(lParam));
+		OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 
 	case WM_MOUSEMOVE:
-		OnMouseMove(wParam, LOWORD(lParam), HIWORD(lParam));
+		OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 
 	case WM_KEYUP:
@@ -324,17 +327,19 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 bool D3DApp::InitMainWindow()
 {
-	WNDCLASSEX wc;
-	ZeroMemory(&wc, sizeof(WNDCLASSEX));
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style			= CS_HREDRAW | CS_VREDRAW;;
+	WNDCLASS wc;
+	wc.style			= CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc		= MainWndProc;
+	wc.cbClsExtra		= 0;
+	wc.cbWndExtra		= 0;
 	wc.hInstance		= mhAppInst;
-	wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground	= (HBRUSH)COLOR_WINDOW;
+	wc.hIcon			= LoadIcon(0, IDI_APPLICATION);
+	wc.hCursor			= LoadCursor(0, IDC_ARROW);
+	wc.hbrBackground	= (HBRUSH)GetStockObject(NULL_BRUSH);
+	wc.lpszMenuName		= 0;
 	wc.lpszClassName	= L"MainWnd";
 
-	if (!RegisterClassEx(&wc))
+	if (!RegisterClass(&wc))
 	{
 		MessageBox(0, L"Register class failed!", 0, 0);
 		return false;
@@ -346,7 +351,7 @@ bool D3DApp::InitMainWindow()
 	int height = R.bottom - R.top;
 
 	mhMainWnd = CreateWindowEx(0, L"MainWnd", mMainWndCaption.c_str(), WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, mhAppInst, 0);
+		CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, 0);
 
 	if (!mhMainWnd)
 	{
@@ -512,6 +517,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView() const
 
 void D3DApp::CalculateFrameStats()
 {
+	static int frameCnt = 0;
+	static float timeElapsed = 0.0f;
+
 	frameCnt++;
 
 	// Compute averages over one second period.
